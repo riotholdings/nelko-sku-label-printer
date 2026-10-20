@@ -29,7 +29,8 @@ func Run(ctx context.Context, labels []Label, copies int, delay time.Duration, s
 			if progress != nil {
 				progress(sent, total)
 			}
-			if sent < total && delay > 0 {
+			// Also wait after the final label before allowing another job/test.
+			if delay > 0 {
 				timer := time.NewTimer(delay)
 				select {
 				case <-ctx.Done():
@@ -41,4 +42,18 @@ func Run(ctx context.Context, labels []Label, copies int, delay time.Duration, s
 		}
 	}
 	return sent, nil
+}
+
+// PrintPause allows the label to feed before another CLS/bitmap overwrites the
+// printer buffer. P21's published maximum feed speed is 20 mm/s; add a margin.
+// Longer stock automatically gets a longer pause. This is timing, not an ACK.
+func PrintPause(requested time.Duration, heightMM float64) time.Duration {
+	minimum := time.Duration((heightMM/20 + 2) * float64(time.Second))
+	if minimum < 4*time.Second {
+		minimum = 4 * time.Second
+	}
+	if requested > minimum {
+		return requested
+	}
+	return minimum
 }

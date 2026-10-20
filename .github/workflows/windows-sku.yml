@@ -40,12 +40,12 @@ jobs:
       - name: Publish Windows download
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: sku-v1.0.0
-          name: Nelko SKU Label Printer v1.0.0
+          tag_name: sku-v1.0.1
+          name: Nelko SKU Label Printer v1.0.1
           body: |
             Windows x64 SKU batch-label printer for Nelko P21/P22 using paired Bluetooth serial ports.
             Download the ZIP, extract it, and open nelko-sku-label-printer.exe.
-            Date/range printing, CSV import, preview, copies, test label and cancellation.
+            Fix batch print corruption: paced Bluetooth writes, serial drain, and a stock-aware minimum pause of 4 seconds after every label, including the last.
             Physical Bluetooth and paper output must be checked on your printer; no label-level acknowledgement is available.
             Based on TylerCode/Fyne-P21-Print (MIT). This release is not digitally signed.
           files: nelko-sku-label-printer-windows-amd64.zip

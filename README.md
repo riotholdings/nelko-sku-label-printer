@@ -22,7 +22,7 @@ For several export files from the same day, either print each file's actual SKUs
 ## Queue, copies and interruption
 
 - Copies apply to every SKU; physical count is shown before printing. A test label is an extra copy of the first selected SKU.
-- The queue sends one label at a time with a default 1-second gap; adjust from 0.2 to 60 seconds if the printer needs longer. Up to 100,000 physical labels per job, 1-100 copies per SKU; split larger runs.
+- The queue sends one label at a time with a minimum 4-second pause after each label (including the last). Adjust from 4 to 60 seconds if needed; longer stock automatically gets more time. Bluetooth data is sent in paced 128-byte chunks and the serial output is drained before the pause. This avoids immediately clearing the print buffer while the previous label is feeding. Up to 100,000 physical labels per job, 1-100 copies per SKU; split larger runs.
 - Cancel stops future sends after the current transmission. Data already buffered in the printer may still print.
 - A transport error stops the queue. It never automatically retries a possibly printed label. Check the last physical label and adjust the start number before resuming.
 - **Sent** means accepted by the serial transport, not verified paper output. The P21 transport does not acknowledge individual labels. Paper jams, out-of-label conditions or a disconnected radio can require a manual check even when a write succeeded.

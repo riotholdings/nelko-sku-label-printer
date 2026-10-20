@@ -24,7 +24,7 @@ import (
 	"nelko-print/internal/tspl"
 )
 
-const version = "1.0.0"
+const version = "1.0.1"
 
 type ui struct {
 	app                                                             fyne.App
@@ -103,7 +103,7 @@ func (u *ui) build() fyne.CanvasObject {
 	u.start = entry("1")
 	u.end = entry("10")
 	u.copies = entry("1")
-	u.delay = entry("1.0")
+	u.delay = entry("4.0")
 	u.size = widget.NewSelect([]string{}, nil)
 	sizes := []string{}
 	for _, s := range tspl.AllSizes {
@@ -337,8 +337,8 @@ func (u *ui) begin(test bool) {
 		return
 	}
 	seconds, err := strconv.ParseFloat(u.delay.Text, 64)
-	if err != nil || math.IsNaN(seconds) || seconds < 0.2 || seconds > 60 {
-		dialog.ShowError(fmt.Errorf("pause must be 0.2 to 60 seconds"), u.window)
+	if err != nil || math.IsNaN(seconds) || seconds < 4 || seconds > 60 {
+		dialog.ShowError(fmt.Errorf("pause must be 4 to 60 seconds (longer stock may require more)"), u.window)
 		return
 	}
 	if test {
@@ -355,7 +355,7 @@ func (u *ui) begin(test bool) {
 		u.setBusy(true)
 		u.progress.SetValue(0)
 		go func() {
-			sent, err := sku.Run(ctx, labels, copies, time.Duration(seconds*float64(time.Second)), func(l sku.Label) error {
+			sent, err := sku.Run(ctx, labels, copies, sku.PrintPause(time.Duration(seconds*float64(time.Second)), size.Height), func(l sku.Label) error {
 				img, err := imaging.RenderSKU(l.Date, l.Sequence, size.PixelW, size.PixelH)
 				if err != nil {
 					return err

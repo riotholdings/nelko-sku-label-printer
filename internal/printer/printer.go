@@ -245,10 +245,13 @@ func (p *Printer) Print(data []byte) error {
 	time.Sleep(100 * time.Millisecond)
 
 	// Send print data
-	if err := writeAll(p.port, data); err != nil {
+	if err := writePaced(p.port, data, time.Sleep); err != nil {
 		return fmt.Errorf("print failed: %w", err)
 	}
 
+	if err := p.port.Drain(); err != nil {
+		return fmt.Errorf("drain print data: %w", err)
+	}
 	return nil
 }
 
@@ -284,6 +287,27 @@ func writeAll(w io.Writer, data []byte) error {
 			return io.ErrShortWrite
 		}
 		data = data[n:]
+	}
+	return nil
+}
+
+// writePaced limits bursts into the printer's Bluetooth receive buffer. An OS
+// write can accept a whole bitmap before the printer has processed those bytes.
+// Keep the byte stream intact, including partial writes, and never retry a job.
+func writePaced(w io.Writer, data []byte, pause func(time.Duration)) error {
+	const chunkSize = 128
+	for len(data) > 0 {
+		n := len(data)
+		if n > chunkSize {
+			n = chunkSize
+		}
+		if err := writeAll(w, data[:n]); err != nil {
+			return err
+		}
+		data = data[n:]
+		if len(data) > 0 {
+			pause(20 * time.Millisecond)
+		}
 	}
 	return nil
 }

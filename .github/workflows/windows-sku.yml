@@ -1,0 +1,51 @@
+name: Windows SKU Printer
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['docs/**']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.2'
+          cache: true
+      - name: Enable MinGW for Fyne
+        shell: pwsh
+        run: |
+          "C:\msys64\mingw64\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      - name: Tests
+        shell: pwsh
+        run: go test -tags ci ./...
+      - name: Build Windows app
+        shell: pwsh
+        env:
+          CGO_ENABLED: '1'
+          CC: gcc
+        run: go build -trimpath -ldflags="-s -w -H windowsgui" -o nelko-sku-label-printer.exe ./cmd/sku-label-printer
+      - name: Package
+        shell: pwsh
+        run: |
+          Get-FileHash nelko-sku-label-printer.exe -Algorithm SHA256 | Format-List | Out-File SHA256.txt
+          Compress-Archive -Path nelko-sku-label-printer.exe,README.md,LICENSE,SHA256.txt -DestinationPath nelko-sku-label-printer-windows-amd64.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nelko-sku-label-printer-windows-amd64
+          path: nelko-sku-label-printer-windows-amd64.zip
+      - name: Publish Windows download
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: sku-v1.0.0
+          name: Nelko SKU Label Printer v1.0.0
+          body: |
+            Windows x64 SKU batch-label printer for Nelko P21/P22 using paired Bluetooth serial ports.
+            Download the ZIP, extract it, and open nelko-sku-label-printer.exe.
+            Date/range printing, CSV import, preview, copies, test label and cancellation.
+            Physical Bluetooth and paper output must be checked on your printer; no label-level acknowledgement is available.
+            Based on TylerCode/Fyne-P21-Print (MIT). This release is not digitally signed.
+          files: nelko-sku-label-printer-windows-amd64.zip
